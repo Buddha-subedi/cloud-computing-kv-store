@@ -1,8 +1,8 @@
 # Coding Assignment 1 — Single-Server Key–Value Store
 
-**Student:** [Your name]  
-**Course:** [Course identifier]  
-**Date:** [Date]
+**Student:** Buddha Subedi 
+**Course:** CSCI 5144
+**Date:** 10/23/2026
 
 ## Design decisions and justification
 
