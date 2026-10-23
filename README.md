@@ -108,3 +108,47 @@ Operation timestamps and outcomes are written to `kv_operations.log` in the work
 - POST is used as PUT semantics because the instructor's benchmark sends POST.
 - GET after a successful completed POST returns the most recently committed value unless another client modifies the key.
 - `kv_bench.py` included here follows the instructor's supplied protocol; use the latest Canvas file as authoritative if the instructor changes it.
+
+## Windows PowerShell quick start (two terminals)
+
+Extract the ZIP, open PowerShell in `kv_assignment`, and run:
+
+**Terminal 1 (server):**
+```powershell
+.\scripts\windows_setup.ps1
+.\scripts\windows_server.ps1
+```
+**Terminal 2 (tests and demonstration):**
+```powershell
+.\scripts\windows_demo.ps1
+```
+If PowerShell blocks `.ps1` files, run the equivalent commands directly:
+`python -m pip install -r requirements.txt`, `python server.py`, and, in a second terminal, `python demo.py` and `python kv_bench.py`. No execution-policy changes are required.
+
+**Restart durability check:** With server running, execute `python kv_bench.py set` in Terminal 2. Stop server in Terminal 1 using Ctrl+C; restart `python server.py` in Terminal 1; execute `python kv_bench.py get` in Terminal 2. Both phases should have `mismatch=0 error=0`.
+
+## GitHub Codespaces quick start
+
+Upload the **contents** of `kv_assignment` to the repository root, including the `.devcontainer` directory and `.gitignore`. On GitHub, click **Code → Codespaces → Create codespace on main**. Codespaces runs in a Linux container; use the **Bash terminal**, not Windows PowerShell.
+
+**Terminal 1 (server):**
+```bash
+bash scripts/codespaces_server.sh
+```
+Dependencies are installed automatically when the Codespace is first created. If needed, run `bash scripts/codespaces_setup.sh`.
+
+**Terminal 2 (demo and tests):**
+```bash
+bash scripts/codespaces_demo.sh
+```
+For restart durability, run `python kv_bench.py set` in Terminal 2, stop and restart the server in Terminal 1, then run `python kv_bench.py get` in Terminal 2.
+
+Codespaces is a development environment, not a permanent public deployment. Keep port 8080 private. Do not commit `.db` files, operation logs, or secrets. Codespaces may have usage limits or costs.
+
+## Measured Windows benchmark example (user's run)
+
+On Windows with 3 threads and 300 keys per phase: PUT `ok=300`, `mismatch=0`, `error=0`, `62.2 ops/s`, `avg=48.11 ms`, `p99=70.04 ms`; GET `ok=300`, `mismatch=0`, `error=0`, `164.5 ops/s`, `avg=18.18 ms`, `p99=36.87 ms`. These are measurements from one run, not guaranteed performance on Codespaces.
+
+## GitHub submission checklist
+
+Verify that `server.py`, `requirements.txt`, `README.md`, test files, `scripts/`, and `.devcontainer/` are present. Complete `REPORT_TEMPLATE.md` with your own account of implementation and testing; convert it to a one-page PDF if required. Share the repository with `chalianwar` according to the instructor's instructions.
