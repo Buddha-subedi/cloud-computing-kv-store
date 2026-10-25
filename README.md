@@ -134,21 +134,7 @@ If the GET phase reports `ok=300 mismatch=0 error=0`, all expected values remain
 - PUT and DEL operations are serialized within the server process using `threading.Lock`; SQLite transactions commit updates atomically.
 - If multiple clients PUT the same key, the final stored value is determined by the order in which writes commit.
 
-## GitHub Codespaces
 
-Open the repository in GitHub Codespaces. In the first terminal, start the server:
-
-```bash
-bash scripts/codespaces_server.sh
-```
-
-In a second terminal, run the demonstration and tests:
-
-```bash
-bash scripts/codespaces_demo.sh
-```
-
-The repository includes `.devcontainer/devcontainer.json` for the development environment.
 
 ## Project Files
 
@@ -161,7 +147,7 @@ The repository includes `.devcontainer/devcontainer.json` for the development en
 | `kv_bench.py` | PUT/GET throughput and latency benchmark |
 | `kv_bench_instructor.py` | POST/GET compatibility benchmark |
 | `REPORT.md` | Technical report |
-| `scripts/` | Windows and Codespaces helper scripts |
+
 
 ## Limitations and Future Work
 
