@@ -2,20 +2,33 @@
 
 ## Design decisions and justification
 
-The application is implemented in Python with Flask for its straightforward HTTP routing and SQLite for durable, file-backed key–value storage. The primary API exposes **PUT** to create/update, **GET** to retrieve, and **DELETE (DEL)** to remove entries. HTTP POST is accepted as an additional write alias for compatibility with the supplied benchmark. A SQLite table with a unique text primary key prevents duplicate keys. Each request uses its own database connection and transaction; a `threading.Lock` serializes write/delete sections within the single server process. Flask handles requests using threads. Logging records operation types, keys, outcomes, and timestamps.
+I implemented a standalone key–value server in **Python using Flask** because Flask provides simple HTTP routing and supports concurrent requests. The API exposes **PUT** to insert or replace a string value, **GET** to retrieve it, and **DELETE (DEL)** to remove it. The server also accepts HTTP POST as a write alias because the provided benchmarking script uses POST for its SET phase. **SQLite** provides persistent, file-backed storage (`kv_store.db`) without a separate database service. Each request uses its own SQLite connection; transactions commit updates, and a process-local `threading.Lock` serializes writes and deletes to protect shared keys. Timestamped operation logs and JSON error responses support diagnosis and testing.
 
 ## Implementation challenges and solutions
 
-Concurrent modifications to a shared key can cause races, so write and delete operations are protected by a lock and committed using SQLite transactions. The benchmark uses POST for writes although the API requirement names PUT; both methods are supported while PUT remains the primary interface. Running a client against a stopped server causes connection errors; server and client are run in separate terminals. Persistence is implemented with a file-backed SQLite database rather than volatile in-memory storage.
+**Concurrent updates:** Multiple clients may write to or delete the same key at once. I used a lock around modifying operations and SQLite transactions to avoid conflicting updates within the single server process. **Benchmark compatibility:** The specified PUT operation differs from the supplied benchmark's POST request; accepting both methods preserves the required PUT interface and allows the provided benchmark to run. **Execution setup:** The server must remain running in one terminal while tests run from the project directory in a second terminal. File-backed SQLite storage avoids losing committed records when the application process stops normally.
 
 ## Assumptions
 
-One trusted local server process listens on `127.0.0.1:8080`. Keys are single URL path segments, values are strings supplied in JSON, and PUT replaces any existing value. A missing key returns 404; invalid input returns 400. Concurrent writes are atomic, but their completion order is nondeterministic. The application is not intended for public production exposure.
+The system runs as **one trusted local server process** at `127.0.0.1:8080`. Keys are single URL path segments; values are strings in a JSON `value` field. PUT creates or replaces a key. Missing keys return HTTP 404 and invalid PUT input returns HTTP 400. Concurrent writes to the same key are atomic, but the last committed value depends on scheduling. The application is not designed for public internet exposure or multiple independent server processes.
 
-## Validation
+## Testing and benchmark results
 
-The repository includes functional tests, a same-key concurrency test, and a PUT/GET benchmark (3 threads, 300 keys per phase). The instructor-provided POST/GET benchmark is retained separately. Historical results from the earlier POST implementation showed 300/300 successful writes/reads and zero errors or mismatches in Codespaces; **re-run the tests after installing this revised version and record the new results before submission**. A restart check is available by running the SET phase, restarting the server, and running the GET phase.
+The Windows PowerShell tests shown in the accompanying run passed: `test_server.py` verified PUT, GET, update, DELETE, validation, and missing-key handling; `test_concurrency.py` passed **60 concurrent PUTs and 30 concurrent DELETEs on one key**. `demo.py` returned successful HTTP 200 responses for PUT/GET/update/DELETE and HTTP 404 for a missing key.
 
-## Future improvements
+The **PUT/GET benchmark** used **3 client threads and 300 keys** (`key_0`–`key_299`), with the following observed results:
 
-Add authentication and TLS, request size limits, stronger concurrency/load tests, multi-process coordination, monitoring, and replication/fault tolerance.
+| Metric | PUT / SET | GET |
+|---|---:|---:|
+| Successful requests | 300 | 300 |
+| Mismatches / errors | 0 / 0 | 0 / 0 |
+| Elapsed time | 1.14 s | 1.06 s |
+| Throughput | 262.1 ops/s | 283.1 ops/s |
+| Average latency | 11.41 ms | 10.55 ms |
+| P99 latency | 32.55 ms | 30.75 ms |
+
+**Total:** 600 successful requests in **2.20 s** (**272.2 ops/s**). A subsequent standalone GET phase retrieved **300/300 values**, with **0 mismatches and 0 errors**, in **1.11 s** (**269.9 ops/s**, average **11.09 ms**, P99 **30.88 ms**). This confirms read-back correctness, **not** persistence across a restart: the supplied screenshots do not show the server being stopped between SET and GET. To verify restart persistence, run `python kv_bench.py set`, stop and restart `python server.py` without deleting `kv_store.db`, then run `python kv_bench.py get`.
+
+## Limitations and future improvements
+
+The process-local lock does not coordinate multiple server processes, and the Flask development server is not production-grade. Future work could add authentication and TLS, request-size limits, a production WSGI server, more extensive load and crash-recovery testing, cross-process coordination, and replication for fault tolerance.
