@@ -29,14 +29,6 @@ cd cloud-computing-kv-store
 python -m pip install -r requirements.txt
 ```
 
-If you already cloned the repository, **do not clone it again**. Open the existing project folder instead:
-
-```powershell
-cd C:\Users\User\cloud-computing-kv-store
-```
-
-If you downloaded the project as a ZIP, extract it and open a terminal in the extracted folder containing `server.py`.
-
 ## Running the Server
 
 **Terminal 1 — start the server:**
