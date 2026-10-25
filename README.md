@@ -161,7 +161,6 @@ The repository includes `.devcontainer/devcontainer.json` for the development en
 | `kv_bench.py` | PUT/GET throughput and latency benchmark |
 | `kv_bench_instructor.py` | POST/GET compatibility benchmark |
 | `REPORT.md` | Technical report |
-| `DEMO_CHEATSHEET.md` | Demonstration instructions |
 | `scripts/` | Windows and Codespaces helper scripts |
 
 ## Limitations and Future Work
