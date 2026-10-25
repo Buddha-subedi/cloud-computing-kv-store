@@ -1,4 +1,4 @@
-"""Write all keys, then read and verify all values; optionally test restart durability.
+"""Benchmark standard HTTP PUT and GET; optionally test restart durability.
 Usage: python kv_bench.py [set] [get]
 """
 import queue
@@ -37,7 +37,7 @@ def session():
 def kv_store_operation(op_type, key, value):
     try:
         if op_type == 'set':
-            response = session().post(f'{BASE_URL}/{key}', json={'value': value}, timeout=10)
+            response = session().put(f'{BASE_URL}/{key}', json={'value': value}, timeout=10)
             response.raise_for_status()
             return 'ok'
         if op_type == 'get':

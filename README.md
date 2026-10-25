@@ -1,338 +1,131 @@
-
 # Single-Server Key–Value Store
 
-A Python-based HTTP key–value storage system built with Flask and SQLite. The application supports persistent storage, concurrent client requests, GET/POST/DELETE operations, error handling, timestamped logging, and performance benchmarking.
+A Python/Flask single-server key–value store with **GET, PUT, and DEL** operations, SQLite persistence, concurrent request handling, error responses, and timestamped logs. Designed for local execution and GitHub Codespaces.
 
 ## Features
 
-- **Key–Value Operations:** Create, retrieve, update, and delete key–value pairs.
-- **Persistent Storage:** SQLite maintains data across server restarts.
-- **Concurrent Requests:** Multithreaded HTTP server with synchronized database writes.
-- **Error Handling:** JSON responses with appropriate HTTP status codes.
-- **Logging:** Timestamped records of operations and database errors.
-- **Testing:** Functional and concurrency tests.
-- **Benchmarking:** Throughput, average latency, and P99 latency measurements.
+- **PUT** (`HTTP PUT /<key>`): create or replace a string value.
+- **GET** (`HTTP GET /<key>`): retrieve a stored value.
+- **DEL** (`HTTP DELETE /<key>`): remove a key and its value.
+- SQLite database transactions preserve committed data across restarts.
+- Flask handles concurrent requests; a process-local lock coordinates writes and deletes.
+- JSON errors and HTTP status codes for missing keys, invalid input, and database failures.
+- Timestamped logging and correctness, concurrency, and performance tests.
 
-## Technology Stack
+**Protocol compatibility:** The supplied benchmark uses HTTP `POST` for its logical write/SET operation. This server additionally accepts `POST /<key>` as an alias for PUT so that benchmark works unchanged. **The primary documented API and all main tests use HTTP PUT.**
 
-- Python
-- Flask
-- SQLite
-- Requests
-- Python Threading
+## Requirements
 
-## Project Structure
+Python 3.10+ and pip. Dependencies are listed in `requirements.txt`.
 
-```text
-cloud-computing-kv-store/
-├── server.py
-├── test_server.py
-├── test_concurrency.py
-├── kv_bench.py
-├── demo.py
-├── requirements.txt
-├── README.md
-├── REPORT_TEMPLATE.md
-├── .gitignore
-├── .devcontainer/
-│   └── devcontainer.json
-└── scripts/
-    ├── windows_setup.ps1
-    ├── windows_server.ps1
-    ├── windows_demo.ps1
-    ├── windows_persistence_set.ps1
-    ├── windows_persistence_get.ps1
-    ├── codespaces_setup.sh
-    ├── codespaces_server.sh
-    └── codespaces_demo.sh
-```
-
-## Installation
-
-### 1. Clone the Repository
+## Install and run
 
 ```bash
-git clone https://github.com/Buddha-subedi/cloud-computing-kv-store.git
-cd cloud-computing-kv-store
+ git clone https://github.com/Buddha-subedi/cloud-computing-kv-store.git
+ cd cloud-computing-kv-store
+ python -m pip install -r requirements.txt
+ python server.py
 ```
 
-### 2. Install Dependencies
+The server listens at `http://127.0.0.1:8080`. Leave it running and open a **second terminal** for the commands below. Stop it using `Ctrl+C`.
 
-```bash
-python -m pip install -r requirements.txt
+## API
+
+| Operation | HTTP request | JSON request body | Success | Missing/invalid |
+|---|---|---|---|---|
+| **PUT** | `PUT /student1` | `{"value":"example"}` | `200`, key and value | `400` for invalid JSON/value |
+| **GET** | `GET /student1` | None | `200`, key and value | `404` |
+| **DEL** | `DELETE /student1` | None | `200`, deleted message | `404` |
+
+Example with Python Requests:
+
+```python
+import requests
+url = "http://127.0.0.1:8080/student1"
+print(requests.put(url, json={"value": "hello"}).json())  # PUT
+print(requests.get(url).json())                          # GET
+print(requests.delete(url).json())                       # DEL
 ```
 
-## Running the Server
+The PUT operation is an *upsert*: it inserts a missing key and replaces the value of an existing key. Values must be JSON strings, including the empty string if desired. Keys must fit a single URL path segment.
 
-Start the Flask application:
+## Testing and demonstration
 
-```bash
-python server.py
-```
-
-The server listens at:
-
-```text
-http://127.0.0.1:8080
-```
-
-Keep the server running while executing client requests and tests in another terminal.
-
-Press `Ctrl+C` to stop the server.
-
-## HTTP API
-
-| Operation | Method | Endpoint | Description |
-|-----------|--------|----------|-------------|
-| Create / Update | POST | `/<key>` | Store or update a value |
-| Retrieve | GET | `/<key>` | Retrieve a stored value |
-| Delete | DELETE | `/<key>` | Remove a stored key |
-
-### Create or Update a Key
-
-**Request:**
-
-```http
-POST /student1
-Content-Type: application/json
-
-{"value": "example_value"}
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "key": "student1",
-  "value": "example_value"
-}
-```
-
-### Retrieve a Key
-
-**Request:**
-
-```http
-GET /student1
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "key": "student1",
-  "value": "example_value"
-}
-```
-
-### Delete a Key
-
-**Request:**
-
-```http
-DELETE /student1
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "key": "student1",
-  "message": "Deleted"
-}
-```
-
-### Error Responses
-
-| HTTP Status | Meaning |
-|-------------|---------|
-| 200 | Successful operation |
-| 400 | Invalid JSON or value |
-| 404 | Key not found |
-| 500 | Database error |
-
-## Testing
-
-Start the server in one terminal and execute the following commands in a second terminal.
-
-### Functional Tests
+With the server running in Terminal 1, run in Terminal 2:
 
 ```bash
 python test_server.py
-```
-
-Verifies key insertion, retrieval, updates, deletion, and missing-key handling.
-
-### Concurrency Tests
-
-```bash
 python test_concurrency.py
-```
-
-Tests concurrent access using 12 worker threads, including 60 write requests and 30 delete requests targeting the same key.
-
-### Demonstration
-
-```bash
 python demo.py
-```
-
-Demonstrates the supported HTTP operations and server responses.
-
-## Performance Benchmarking
-
-Run:
-
-```bash
 python kv_bench.py
 ```
 
-The benchmark uses:
+- `test_server.py`: GET, PUT, DEL, updates, invalid input and missing-key responses.
+- `test_concurrency.py`: 60 concurrent PUTs and 30 concurrent DELs to the same key using 12 workers.
+- `demo.py`: short GET/PUT/DEL demonstration.
+- `kv_bench.py`: **HTTP PUT** benchmark (3 threads, 300 writes, 300 reads).
+- `kv_bench_instructor.py`: unmodified supplied **HTTP POST** benchmark for protocol compatibility.
 
-- 3 concurrent client threads
-- 300 unique keys
-- 300 POST requests
-- 300 GET requests
-- 600 total requests
-
-The GET phase verifies that retrieved values match the values written during the POST phase.
-
-### Benchmark Results
-
-Measured in GitHub Codespaces using three concurrent client threads:
-
-| Metric | POST (SET) | GET |
-|--------|-----------:|----:|
-| Successful requests | 300 | 300 |
-| Mismatches | 0 | 0 |
-| Errors | 0 | 0 |
-| Execution time | 0.77 s | 0.70 s |
-| Throughput | 387.6 ops/s | 429.2 ops/s |
-| Average latency | 7.71 ms | 6.96 ms |
-| P99 latency | 16.96 ms | 14.70 ms |
-
-**Overall:** 600 successful operations in approximately 1.47 seconds, with an aggregate throughput of 407.3 operations per second.
-
-Performance varies depending on the execution environment and system workload.
-
-## Persistence Testing
-
-SQLite stores key–value pairs in `kv_store.db`.
-
-To test persistence across server restarts:
-
-**Step 1:** Start the server and write 300 keys.
+Benchmark phases can be run separately:
 
 ```bash
 python kv_bench.py set
-```
-
-**Step 2:** Stop the server using `Ctrl+C`, then restart it.
-
-```bash
-python server.py
-```
-
-**Step 3:** Retrieve and verify the stored values.
-
-```bash
+# Stop and restart server in Terminal 1, retaining the same database file.
 python kv_bench.py get
 ```
 
-A successful test returns 300 correct values with zero errors or mismatches.
+The expected correctness target is `ok=300 mismatch=0 error=0` for each phase. This tests data availability after a controlled restart; it does not establish power-loss durability.
 
-## GitHub Codespaces
+### Previously measured benchmark (original POST protocol)
 
-The project includes a development container configuration for GitHub Codespaces.
+A previous GitHub Codespaces run of the original POST-based benchmark reported 300 successful writes and 300 successful reads with zero errors/mismatches. Write throughput was 387.6 ops/s (average 7.71 ms; P99 16.96 ms), and read throughput was 429.2 ops/s (average 6.96 ms; P99 14.70 ms). **These are historical results from the earlier implementation, not measurements of this revised PUT-based package.** Re-run the benchmarks for current results.
 
-1. Open the GitHub repository.
-2. Select **Code → Codespaces → Create codespace on main**.
-3. Open the integrated terminal.
+## Storage, synchronization and logging
 
-**Terminal 1 — Start Server**
-
-```bash
-bash scripts/codespaces_server.sh
-```
-
-**Terminal 2 — Run Tests**
-
-```bash
-bash scripts/codespaces_demo.sh
-```
-
-To install dependencies manually:
-
-```bash
-bash scripts/codespaces_setup.sh
-```
+- `kv_store.db`: SQLite database file, generated at runtime; default path can be overridden using `KV_DB`.
+- `kv_operations.log`: timestamped operations and errors, generated at runtime.
+- Every request opens and closes its own SQLite connection; writes use transactions and a `threading.Lock`.
+- Simultaneous writes to the same key are atomic; the final value depends on which write commits last.
+- Missing keys return HTTP 404, invalid PUT bodies return HTTP 400, and database failures return HTTP 500.
 
 ## Windows PowerShell
 
-The application can also run locally on Windows.
-
-**Terminal 1:**
+In two PowerShell terminals, run:
 
 ```powershell
+# Terminal 1
 python -m pip install -r requirements.txt
 python server.py
 ```
 
-**Terminal 2:**
-
 ```powershell
+# Terminal 2
 python test_server.py
 python test_concurrency.py
 python demo.py
 python kv_bench.py
 ```
 
-Alternatively, use the provided PowerShell scripts.
+Helper scripts are also available under `scripts/`.
 
-## System Design
+## GitHub Codespaces
 
-The application follows a client–server architecture.
+Create a Codespace from the repository and use the Bash terminal. Run `bash scripts/codespaces_server.sh` in Terminal 1 and `bash scripts/codespaces_demo.sh` in Terminal 2. A `.devcontainer/devcontainer.json` configuration is included.
 
-1. **HTTP Client:** Sends GET, POST, and DELETE requests.
-2. **Flask Server:** Processes requests, validates input, and returns JSON responses.
-3. **SQLite Database:** Stores key–value pairs persistently.
+## Project files
 
-### Concurrency
+| File | Purpose |
+|---|---|
+| `server.py` | Flask GET/PUT/DEL server with SQLite, locks, and logging |
+| `test_server.py` | Functional API tests |
+| `test_concurrency.py` | Same-key concurrent PUT/DEL tests |
+| `demo.py` | Short interactive demonstration |
+| `kv_bench.py` | PUT/GET throughput and latency benchmark |
+| `kv_bench_instructor.py` | Original POST/GET benchmark, unchanged |
+| `REPORT.md` | Concise technical report |
+| `DEMO_CHEATSHEET.md` | Demo steps |
+| `scripts/` | Windows and Codespaces helper scripts |
 
-Flask supports multithreaded request handling. A Python `threading.Lock` serializes write and delete operations within the server process.
+## Limitations and future work
 
-Each database operation uses a separate SQLite connection. SQLite transactions provide atomic commits and rollback behavior.
-
-When multiple clients update the same key, the final value depends on the order of completed writes.
-
-### Data Storage
-
-The database contains a `kv` table with two columns:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `key` | TEXT PRIMARY KEY | Unique key identifier |
-| `value` | TEXT NOT NULL | Associated string value |
-
-### Logging
-
-Operations and errors are recorded in:
-
-```text
-kv_operations.log
-```
-
-The log includes timestamps, operation types, keys, and HTTP status codes.
-
-## Limitations and Future Improvements
-
-- Designed for a single server process.
-- No distributed replication or fault tolerance.
-- No authentication or TLS.
-- Supports string values and single-segment URL keys.
-- Uses Flask's development server for local testing.
-- Potential extensions include distributed deployment, connection pooling, authentication, and more extensive performance testing.
-
-## Repository
-
-https://github.com/Buddha-subedi/cloud-computing-kv-store
+This is a single-process local development server, not a production internet-facing service. It does not implement authentication, TLS, replication, or cross-process locking. Potential improvements include request size limits, a production WSGI server, stronger load testing, and distributed storage/replication.
