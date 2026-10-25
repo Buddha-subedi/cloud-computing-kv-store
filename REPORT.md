@@ -31,4 +31,4 @@ The **PUT/GET benchmark** used **3 client threads and 300 keys** (`key_0`–`key
 
 ## Limitations and future improvements
 
-The process-local lock does not coordinate multiple server processes, and the Flask development server is not production-grade. Future work could add authentication and TLS, request-size limits, a production WSGI server, more extensive load and crash-recovery testing, cross-process coordination, and replication for fault tolerance.
+The implementation is designed for a single-server environment. Thread synchronization ensures safe concurrent modifications within one server process, while SQLite provides persistent storage. However, the system does not support distributed replication or coordination across multiple server processes. Future improvements could include authentication, encrypted communication, more extensive performance and crash-recovery testing, and replication across multiple servers to improve scalability and fault tolerance.
