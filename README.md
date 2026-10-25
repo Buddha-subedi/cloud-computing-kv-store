@@ -1,6 +1,6 @@
 # Single-Server Key–Value Store — Coding Assignment 1
 
-A standalone Python/Flask HTTP server with SQLite persistence, concurrent request handling, timestamped operation logs, and GET/PUT/DELETE endpoints. Designed for **local Windows PowerShell** at `127.0.0.1:8080`. No MSI/Agate or paid cloud host required.
+A standalone Python/Flask HTTP server with SQLite persistence, concurrent request handling, timestamped operation logs, and GET/PUT/DELETE endpoints. Designed for **local Windows PowerShell** at `127.0.0.1:8080`.
 
 ## What the instructor requires
 
