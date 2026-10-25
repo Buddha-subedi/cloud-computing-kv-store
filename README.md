@@ -76,9 +76,33 @@ python kv_bench.py get
 
 The expected correctness target is `ok=300 mismatch=0 error=0` for each phase. This tests data availability after a controlled restart; it does not establish power-loss durability.
 
-### Previously measured benchmark (original POST protocol)
 
-A previous GitHub Codespaces run of the original POST-based benchmark reported 300 successful writes and 300 successful reads with zero errors/mismatches. Write throughput was 387.6 ops/s (average 7.71 ms; P99 16.96 ms), and read throughput was 429.2 ops/s (average 6.96 ms; P99 14.70 ms). **These are historical results from the earlier implementation, not measurements of this revised PUT-based package.** Re-run the benchmarks for current results.
+### Performance and Persistence Evaluation
+
+The server supports concurrent HTTP PUT and GET requests.
+Performance is evaluated using three client threads,
+300 write operations, and 300 read operations.
+
+The benchmark reports throughput (operations per second),
+average latency, P99 latency, successful requests,
+errors, and value mismatches.
+
+Run the complete benchmark:
+
+```powershell
+python kv_bench.py
+```
+
+To verify persistence across a server restart:
+
+1. Run `python kv_bench.py set`.
+2. Stop the server using `Ctrl+C`.
+3. Restart the server using `python server.py`.
+4. Run `python kv_bench.py get`.
+
+A successful persistence test retrieves all 300 stored
+values with zero errors and zero mismatches.
+
 
 ## Storage, synchronization and logging
 
