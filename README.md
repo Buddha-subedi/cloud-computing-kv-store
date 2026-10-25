@@ -151,4 +151,4 @@ If the GET phase reports `ok=300 mismatch=0 error=0`, all expected values remain
 
 ## Limitations and Future Work
 
-This implementation is intended for a single local server process. It does not provide authentication, TLS, replication, or cross-process locking. Future improvements could include request-size limits, deployment with a production WSGI server, stronger stress testing, and distributed replication.
+The implementation is designed for a single-server environment. Thread synchronization ensures safe concurrent modifications within one server process, while SQLite provides persistent storage. However, the system does not support distributed replication or coordination across multiple server processes. Future improvements could include authentication, encrypted communication, more extensive performance and crash-recovery testing, and replication across multiple servers to improve scalability and fault tolerance.
